@@ -4,7 +4,8 @@
   "description": "A set of tool for GPX manipulation",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "test:update-snapshots": "jest --updateSnapshot"
   },
   "repository": {
     "type": "git",
@@ -18,5 +19,33 @@
   "homepage": "https://github.com/florianpasteur/gpx-tools#readme",
   "dependencies": {
     "jsdom": "^27.0.1"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.28.3",
+    "jest": "^30.2.0"
+  },
+  "jest": {
+    "testMatch": [
+      "**/__tests__/**/*.?(m|c)js?(x)",
+      "**/?(*.)(spec|test).?(m|c)js?(x)"
+    ],
+    "moduleFileExtensions": [
+      "js",
+      "cjs",
+      "mjs"
+    ],
+    "transform": {
+      "^.+\\.[t|j]sx?$": "babel-jest",
+      "^.+.m?js$": "babel-jest"
+    }
+  },
+  "babel": {
+    "env": {
+      "test": {
+        "presets": [
+          "@babel/preset-env"
+        ]
+      }
+    }
   }
 }
