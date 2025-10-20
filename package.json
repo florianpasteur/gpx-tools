@@ -15,5 +15,8 @@
   "bugs": {
     "url": "https://github.com/florianpasteur/gpx-tools/issues"
   },
-  "homepage": "https://github.com/florianpasteur/gpx-tools#readme"
+  "homepage": "https://github.com/florianpasteur/gpx-tools#readme",
+  "dependencies": {
+    "jsdom": "^27.0.1"
+  }
 }
