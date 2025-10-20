@@ -2,7 +2,7 @@
   "name": "@flow-js/gpx-tools",
   "version": "1.0.0",
   "description": "A set of tool for GPX manipulation",
-  "main": "index.js",
+  "main": "index.mjs",
   "type": "module",
   "scripts": {
     "test": "node tests/test.mjs",
