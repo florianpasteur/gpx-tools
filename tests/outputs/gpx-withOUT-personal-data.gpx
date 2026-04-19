@@ -1,0 +1,29 @@
+<gpx creator="Garmin Connect" version="1.1" xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/11.xsd" xmlns:ns3="http://www.garmin.com/xmlschemas/TrackPointExtension/v1" xmlns="http://www.topografix.com/GPX/1/1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ns2="http://www.garmin.com/xmlschemas/GpxExtensions/v3">
+    <metadata>
+        <link href="connect.garmin.com">
+            <text>Garmin Connect</text>
+        </link>
+        <time>2026-04-18T04:00:00.000Z</time>
+    </metadata>
+    <trk>
+    <name>Course A</name>
+    <type>road_biking</type>
+    <trkseg>
+      <trkpt lat="50.8672116883099079132080078125" lon="5.8229247294366359710693359375">
+        <ele>68</ele>
+        <time>2026-04-18T04:01:32.000Z</time>
+        
+      </trkpt>
+      <trkpt lat="50.8672116883099079132080078125" lon="5.8229247294366359710693359375">
+        <ele>68.1999969482421875</ele>
+        <time>2026-04-18T04:02:33.000Z</time>
+        
+      </trkpt>
+      <trkpt lat="50.8672116883099079132080078125" lon="5.8229247294366359710693359375">
+        <ele>67.1999969482421875</ele>
+        <time>2026-04-18T04:03:38.000Z</time>
+        
+      </trkpt>
+    </trkseg>
+    </trk>
+</gpx>
