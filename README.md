@@ -13,6 +13,7 @@ npm install @flow-js/gpx-tools
 - **Add KML waypoints to GPX** - Import placemarks from KML files and add them as waypoints to GPX tracks
 - **Refine waypoints for Garmin Connect** - Automatically set waypoint types and truncate descriptions for Garmin device compatibility
 - **Anonymize GPX files** - Remove personal data and extensions from GPX files
+- **Trim GPX files** - Extract a time-based segment from a GPX track
 
 ## Usage
 
@@ -68,6 +69,22 @@ const result = await anonymizeGpx(gpxContent);
 await fs.writeFile('anonymous.gpx', result);
 ```
 
+### Trim GPX Files
+
+Extract a segment from a GPX track based on a center timestamp and duration. The duration is split equally before and after the timestamp.
+
+```javascript
+import { trimGpx } from '@flow-js/gpx-tools';
+import fs from 'fs/promises';
+
+const gpxContent = await fs.readFile('track.gpx', 'utf-8');
+
+// Keep 5 minutes of data centered on the timestamp (2.5 min before, 2.5 min after)
+const result = await trimGpx(gpxContent, '2026-04-18T06:00:00.000Z', 300);
+
+await fs.writeFile('trimmed.gpx', result);
+```
+
 ## POI Types
 
 The library exports `POIType` with Garmin-compatible point of interest types:
@@ -111,6 +128,16 @@ The library exports `POIType` with Garmin-compatible point of interest types:
 | `gpxContent` | `string` | GPX file content |
 
 **Returns:** `Promise<string>` - GPX content with extensions removed
+
+### `trimGpx(gpxContent, timestamp, durationSeconds)`
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `gpxContent` | `string` | GPX file content |
+| `timestamp` | `string \| Date` | Center timestamp (ISO string or Date object) |
+| `durationSeconds` | `number` | Total duration in seconds to keep (split equally before/after timestamp) |
+
+**Returns:** `Promise<string>` - GPX content with trackpoints outside the time window removed
 
 ## License
 
