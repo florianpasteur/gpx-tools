@@ -3,6 +3,7 @@ import {refineWaypointForGarminConnect} from "../src/refine-waypoints-for-garmin
 import {addKmlToGpx} from "../src/add-kml-to-gpx.mjs";
 import {POIType} from "../lib/poi-type.mjs";
 import {anonymizeGpx} from "../src/anonymize-gpx.mjs";
+import {trimGpx} from '../index.mjs';
 
 ;(async function () {
     const gpxContent = (await fs.readFile('tests/assets/gpx-with-poi.gpx', 'utf-8')).toString();
@@ -28,4 +29,14 @@ import {anonymizeGpx} from "../src/anonymize-gpx.mjs";
     const gpxContentWithoutPersonalData = await anonymizeGpx(gpxContent);
 
     await fs.writeFile('tests/outputs/gpx-withOUT-personal-data.gpx', gpxContentWithoutPersonalData);
+})();
+
+
+;(async function () {
+    const gpxContent = (await fs.readFile('tests/assets/activity_22574526552.gpx', 'utf-8')).toString();
+
+    const a = await anonymizeGpx(gpxContent);
+    const b = await trimGpx(a, '2026-04-18T13:22:00.000Z', 60 * 5);
+
+    await fs.writeFile('tests/outputs/mou_descent.gpx', b);
 })();
