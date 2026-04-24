@@ -23,9 +23,6 @@ jobs:
           node-version: '22'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Upgrade npm (Trusted Publisher needs >= 11.5.1)
-        run: npm install -g npm@latest
-
       - name: Configure Git
         run: |
           git config user.name "github-actions[bot]"
