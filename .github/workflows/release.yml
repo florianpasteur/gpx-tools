@@ -41,9 +41,6 @@ jobs:
                   git config user.email "github-actions[bot]@users.noreply.github.com"
                   npm version patch -m "chore(release): bump version to %s"
 
-            - name: Build package
-              run: npm run build
-
             - name: Push changes and tags
               run: |
                   git push origin main
