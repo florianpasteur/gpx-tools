@@ -41,7 +41,17 @@ export async function addKmlToGpx(gpx, kml, kmlPointType, thresholdDistance = 30
         return b.distanceFromTheStart - a.distanceFromTheStart;
     });
 
-    waypointsCandidates.forEach((waypoint) => {
+    waypointsCandidates
+        .filter(waypoint => waypoint.distanceFromTheStart >= distanceBeforeFirstPoint)
+        .filter((waypoint, index, collection) => {
+            if (index === 0) {
+                return true;
+            }
+            const prevPoint = collection[index - 1];
+            return waypoint.distanceFromTheStart - prevPoint.distanceFromTheStart >= thresholdDistanceBetweenPoints;
+
+        })
+        .forEach((waypoint) => {
         createWaypoint(gpxDoc, waypoint);
     })
 
