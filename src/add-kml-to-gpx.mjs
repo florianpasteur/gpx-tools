@@ -6,17 +6,19 @@ import {distanceInMeters} from "../lib/distance-in-meters.mjs";
 
 /**
  * Add KML placemarks as waypoints to GPX content.
- * @param gpx string
- * @param kml string
- * @param kmlPointType string
- * @param thresholdDistance number
+ * @param gpx string - The route gpx content
+ * @param kml string - The map of waypoints candidates
+ * @param kmlPointType string - The waypoint category
+ * @param thresholdDistance number - The distance range from where the point is added to the GPX
+ * @param thresholdDistanceBetweenPoints - The distance before adding the another waypoint
+ * @param distanceBeforeFirstPoint - The distance before adding the first same waypoint
  * @returns {Promise<string>}
  */
-export async function addKmlToGpx(gpx, kml, kmlPointType, thresholdDistance = 300) {
+export async function addKmlToGpx(gpx, kml, kmlPointType, thresholdDistance = 300, thresholdDistanceBetweenPoints = 600,  distanceBeforeFirstPoint = 0) {
     const placemarks = await processKml(kml, kmlPointType);
     const {document: gpxDoc, jsdomRef: gpxJsdomRef, allGpxPoints} = await processGpx(gpx);
 
-
+    const waypointsCandidates = []
     placemarks.forEach((placemark) => {
         const type = placemark.getAttribute('type');
         const nameElement = placemark.querySelector('name');
@@ -25,14 +27,23 @@ export async function addKmlToGpx(gpx, kml, kmlPointType, thresholdDistance = 30
 
         const closestPoint = getClosestPoint({lat, lon}, allGpxPoints);
         if (closestPoint.distance < thresholdDistance) {
-            createWaypoint(gpxDoc, {
+            waypointsCandidates.push({
                 lat: closestPoint.point.lat,
                 lon: closestPoint.point.lon,
+                distanceFromTheStart: closestPoint.point.distanceFromTheStart,
                 name: `${name} (${Math.round(closestPoint.distance)}m,${closestPoint.direction})`,
                 type
             });
         }
     });
+
+    waypointsCandidates.sort((a, b) => {
+        return b.distanceFromTheStart - a.distanceFromTheStart;
+    });
+
+    waypointsCandidates.forEach((waypoint) => {
+        createWaypoint(gpxDoc, waypoint);
+    })
 
     return serialize(gpxJsdomRef);
 }
