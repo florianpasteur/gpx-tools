@@ -2,6 +2,7 @@ import {readXml} from "../lib/read-xml.mjs";
 import {serialize} from "../lib/jsdom-serialize.mjs";
 import {getClosestPoint} from "../lib/closet-point.mjs";
 import {createWaypoint} from "../lib/create-waypoint.mjs";
+import {distanceInMeters} from "../lib/distance-in-meters.mjs";
 
 /**
  * Add KML placemarks as waypoints to GPX content.
@@ -55,15 +56,32 @@ async function processKml(kmlContent, pointType) {
 async function processGpx(gpxContent) {
     const gpx = await readXml(gpxContent);
 
+    const trkpts = Array.from(gpx.document.querySelectorAll('trkpt'));
 
-    const allGpxPoints = Array.from(gpx.document.querySelectorAll('trkpt')).map(trkpt => {
+    const allGpxPoints = trkpts.map((trkpt, index, arr) => {
         const lat = parseFloat(trkpt.getAttribute('lat').trim());
         const lon = parseFloat(trkpt.getAttribute('lon').trim());
-        return {lat, lon};
-    })
+
+        const prev = arr[index - 1];
+        const segmentDistance = prev
+            ? distanceInMeters(
+                {lat: parseFloat(prev.getAttribute('lat')), lon: parseFloat(prev.getAttribute('lon'))},
+                {lat, lon}
+              )
+            : 0;
+
+        return {lat, lon, segmentDistance};
+    });
+
+    let cumulative = 0;
+    for (const point of allGpxPoints) {
+        cumulative += point.segmentDistance;
+        point.distanceFromTheStart = cumulative;
+        delete point.segmentDistance;
+    }
 
     return {
         ...gpx,
         allGpxPoints
-    }
+    };
 }
