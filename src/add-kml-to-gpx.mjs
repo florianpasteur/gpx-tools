@@ -14,7 +14,7 @@ import {distanceInMeters} from "../lib/distance-in-meters.mjs";
  * @param distanceBeforeFirstPoint - The distance before adding the first same waypoint
  * @returns {Promise<string>}
  */
-export async function addKmlToGpx(gpx, kml, kmlPointType, thresholdDistance = 300, thresholdDistanceBetweenPoints = 600,  distanceBeforeFirstPoint = 0) {
+export async function addKmlToGpx(gpx, kml, kmlPointType, thresholdDistance = 300, thresholdDistanceBetweenPoints = 600,  distanceBeforeFirstPoint = 1) {
     const placemarks = await processKml(kml, kmlPointType);
     const {document: gpxDoc, jsdomRef: gpxJsdomRef, allGpxPoints} = await processGpx(gpx);
 
@@ -38,11 +38,17 @@ export async function addKmlToGpx(gpx, kml, kmlPointType, thresholdDistance = 30
     });
 
     waypointsCandidates.sort((a, b) => {
-        return b.distanceFromTheStart - a.distanceFromTheStart;
+        return a.distanceFromTheStart - b.distanceFromTheStart;
     });
 
-    waypointsCandidates
-        .filter(waypoint => waypoint.distanceFromTheStart >= distanceBeforeFirstPoint)
+    console.log(waypointsCandidates.length, "waypoints candidates");
+
+    let waypointAfterTheStart = waypointsCandidates
+        .filter(waypoint => waypoint.distanceFromTheStart >= distanceBeforeFirstPoint);
+
+    console.log(waypointAfterTheStart.length, "waypoints candidates are ", distanceBeforeFirstPoint, "m after the start");
+
+    let waypointsWithoutDuplicates = waypointAfterTheStart
         .filter((waypoint, index, collection) => {
             if (index === 0) {
                 return true;
@@ -50,7 +56,12 @@ export async function addKmlToGpx(gpx, kml, kmlPointType, thresholdDistance = 30
             const prevPoint = collection[index - 1];
             return waypoint.distanceFromTheStart - prevPoint.distanceFromTheStart >= thresholdDistanceBetweenPoints;
 
-        })
+        });
+
+
+    console.log(waypointAfterTheStart.length, "waypoints candidates are far enough from each other", thresholdDistanceBetweenPoints, "m");
+
+    waypointsWithoutDuplicates
         .forEach((waypoint) => {
         createWaypoint(gpxDoc, waypoint);
     })
@@ -84,12 +95,15 @@ async function processGpx(gpxContent) {
         const lon = parseFloat(trkpt.getAttribute('lon').trim());
 
         const prev = arr[index - 1];
-        const segmentDistance = prev
+        let segmentDistance = prev
             ? distanceInMeters(
                 {lat: parseFloat(prev.getAttribute('lat')), lon: parseFloat(prev.getAttribute('lon'))},
                 {lat, lon}
               )
             : 0;
+        if (isNaN(segmentDistance)) {
+            segmentDistance = 0;
+        }
 
         return {lat, lon, segmentDistance};
     });
