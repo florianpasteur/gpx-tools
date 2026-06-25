@@ -31,11 +31,14 @@ export async function addKmlToGpx(gpx, kml, kmlPointType, thresholdDistance = 30
                 lat: closestPoint.point.lat,
                 lon: closestPoint.point.lon,
                 distanceFromTheStart: closestPoint.point.distanceFromTheStart,
+                distanceFromTheTrace: closestPoint.distance,
                 name: `${name} (${Math.round(closestPoint.distance)}m,${closestPoint.direction})`,
                 type
             });
         }
     });
+
+    const waypointsToIgnore = new Set();
 
     waypointsCandidates.sort((a, b) => {
         return a.distanceFromTheStart - b.distanceFromTheStart;
@@ -43,25 +46,39 @@ export async function addKmlToGpx(gpx, kml, kmlPointType, thresholdDistance = 30
 
     console.log(waypointsCandidates.length, "waypoints candidates");
 
-    let waypointAfterTheStart = waypointsCandidates
-        .filter(waypoint => waypoint.distanceFromTheStart >= distanceBeforeFirstPoint);
+    let waypointBeforeTheStart = waypointsCandidates
+        .filter(waypoint => waypoint.distanceFromTheStart <= distanceBeforeFirstPoint);
 
-    console.log(waypointAfterTheStart.length, "waypoints candidates are ", distanceBeforeFirstPoint, "m after the start");
+    waypointBeforeTheStart.forEach((waypoint) => {
+        waypointsToIgnore.add(waypoint);
+    })
 
-    let waypointsWithoutDuplicates = waypointAfterTheStart
-        .filter((waypoint, index, collection) => {
-            if (index === 0) {
-                return true;
+    console.log(waypointBeforeTheStart.length, "waypoints ignored, too close from the start ", distanceBeforeFirstPoint, "m");
+
+    const waypointsSortedByDistanceFromTheTrace = Array.from(waypointsCandidates).sort((a, b) => a.distanceFromTheTrace - b.distanceFromTheTrace);
+
+    for (const waypointRef of waypointsSortedByDistanceFromTheTrace) {
+        if (waypointsToIgnore.has(waypointRef)) {
+            continue;
+        }
+        const rangeMin = waypointRef.distanceFromTheStart - thresholdDistanceBetweenPoints/2;
+        const rangeMax = waypointRef.distanceFromTheStart + thresholdDistanceBetweenPoints/2;
+        for (const waypointsCandidate of waypointsCandidates) {
+            if (waypointsCandidate === waypointRef) {
+                continue;
             }
-            const prevPoint = collection[index - 1];
-            return waypoint.distanceFromTheStart - prevPoint.distanceFromTheStart >= thresholdDistanceBetweenPoints;
+            if (inRange(waypointsCandidate.distanceFromTheStart, [rangeMin, rangeMax])) {
+                waypointsToIgnore.add(waypointsCandidate);
+            }
+        }
+    }
 
-        });
+    console.log(waypointsToIgnore.size, "waypoints ignored (too close to each other)", thresholdDistanceBetweenPoints, "m");
 
+    let waypointsToProcess = waypointsCandidates.filter(waypoint => !waypointsToIgnore.has(waypoint));
 
-    console.log(waypointAfterTheStart.length, "waypoints candidates are far enough from each other", thresholdDistanceBetweenPoints, "m");
-
-    waypointsWithoutDuplicates
+    console.log("Processing ", waypointsToProcess.length, "waypoints");
+    waypointsToProcess
         .forEach((waypoint) => {
         createWaypoint(gpxDoc, waypoint);
     })
@@ -119,4 +136,11 @@ async function processGpx(gpxContent) {
         ...gpx,
         allGpxPoints
     };
+}
+
+
+function inRange(value, [a, b]) {
+    const min = Math.min(a, b);
+    const max = Math.max(a, b);
+    return min <= value && value <= max;
 }

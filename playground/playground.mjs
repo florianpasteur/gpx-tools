@@ -6,13 +6,34 @@ import fs from "fs/promises";
 
     let gpx = await readFileAsText('gpx/tcs-half-marathon.gpx');
 
-    gpx = await addKmlToGpx(gpx, await readFileAsText('kml/Stores.kml'),
+    const stores = await readFileAsText('kml/Stores.kml');
+    const toilets = await readFileAsText('kml/Toilets.kml');
+    const waterPoint = await readFileAsText('kml/Water-points.kml');
+
+    gpx = await addKmlToGpx(
+        gpx,
+        stores,
         'STORE',
         500,
-        300,
-        1);
-    // gpx = await addKmlToGpx(gpx, await readFileAsText('kml/Toilets.kml'), 'TOILET', 500, 0, 0);
-    // gpx = await addKmlToGpx(gpx, await readFileAsText('kml/Water-points.kml'), 'STORE', 500, 0, 0);
+        5_000,
+        3_000
+    );
+    gpx = await addKmlToGpx(
+        gpx,
+        toilets,
+        'TOILET',
+        500,
+        5_000,
+        0
+    );
+    gpx = await addKmlToGpx(
+        gpx,
+        waterPoint,
+        'WATER',
+        500,
+        5_000,
+        5_000
+    );
 
     await fs.writeFile('out/tcs-half-marathon-with-poi.gpx', gpx);
 })();
