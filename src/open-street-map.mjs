@@ -138,6 +138,32 @@ export function findStores(pointA, pointB, options = {}) {
 }
 
 /**
+ * Compute the south-west and north-east corners of the bounding box containing
+ * every trackpoint in a GPX document. Handy to feed the two-point query functions.
+ * @param {string} gpxText - The GPX file content as a string
+ * @returns {[{lat: number, lon: number}, {lat: number, lon: number}]} [southWest, northEast]
+ */
+export function boundingCorners(gpxText) {
+    const lats = [];
+    const lons = [];
+    const trkptRegex = /<trkpt[^>]*\blat="([^"]+)"[^>]*\blon="([^"]+)"/g;
+    let match;
+    while ((match = trkptRegex.exec(gpxText)) !== null) {
+        lats.push(parseFloat(match[1]));
+        lons.push(parseFloat(match[2]));
+    }
+
+    if (lats.length === 0) {
+        throw new Error('boundingCorners: no <trkpt> coordinates found in GPX content');
+    }
+
+    return [
+        {lat: Math.min(...lats), lon: Math.min(...lons)},
+        {lat: Math.max(...lats), lon: Math.max(...lons)},
+    ];
+}
+
+/**
  * Build the smallest axis-aligned bounding box containing both points, optionally padded.
  * @param {{lat: number, lon: number}} pointA
  * @param {{lat: number, lon: number}} pointB

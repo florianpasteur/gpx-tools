@@ -1,5 +1,5 @@
 import {addKmlToGpx} from "../src/add-kml-to-gpx.mjs";
-import {findWaterPoints} from "../src/open-street-map.mjs";
+import {findWaterPoints, boundingCorners} from "../src/open-street-map.mjs";
 import fs from "fs/promises";
 
 ;(async function () {
@@ -42,19 +42,4 @@ import fs from "fs/promises";
 
 async function readFileAsText(filePath) {
     return (await fs.readFile(filePath, 'utf8')).toString()
-}
-
-function boundingCorners(gpxText) {
-    const lats = [];
-    const lons = [];
-    const trkptRegex = /<trkpt[^>]*\blat="([^"]+)"[^>]*\blon="([^"]+)"/g;
-    let match;
-    while ((match = trkptRegex.exec(gpxText)) !== null) {
-        lats.push(parseFloat(match[1]));
-        lons.push(parseFloat(match[2]));
-    }
-    return [
-        {lat: Math.min(...lats), lon: Math.min(...lons)},
-        {lat: Math.max(...lats), lon: Math.max(...lons)},
-    ];
 }
