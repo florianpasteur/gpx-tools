@@ -6,12 +6,21 @@ import fs from "fs/promises";
 
 
     let gpx = await readFileAsText('gpx/tcs-half-marathon.gpx');
+    let poiKml = await readFileAsText('kml/POI.kml');
 
     const [southWest, northEast] = boundingCorners(gpx);
     const {kml: stores} = await findStores(southWest, northEast, {bufferMeters: 500});
     const {kml: toilets} = await findToilets(southWest, northEast, {bufferMeters: 500});
     const {kml: waterPoint} = await findWaterPoints(southWest, northEast, {bufferMeters: 500});
 
+    gpx = await addKmlToGpx(
+        gpx,
+        poiKml,
+        'OVERLOOK',
+        500,
+        0,
+        0
+    );
     gpx = await addKmlToGpx(
         gpx,
         stores,
