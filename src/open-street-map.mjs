@@ -50,6 +50,8 @@ export const POI_FILTERS = {
  * @param {number} [options.timeoutSeconds=25] - Overpass server-side query timeout
  * @param {string} [options.documentName='OpenStreetMap POIs'] - KML document name
  * @param {string} [options.userAgent] - User-Agent header (Overpass rejects requests without one)
+ * @param {number} [options.maxRetries=3] - Retries when Overpass replies 429/504 (rate limit / gateway timeout)
+ * @param {number} [options.retryDelayMs=2000] - Base delay between retries, grows linearly with the attempt
  * @param {typeof fetch} [options.fetchFn=fetch] - Custom fetch implementation (e.g. for testing)
  * @returns {Promise<{points: Array<{id: number, type: string, lat: number, lon: number, name: string|null, tags: object}>, kml: string}>}
  */
@@ -60,6 +62,8 @@ export async function genericOpenStreetMapQuery(pointA, pointB, filters, options
         timeoutSeconds = 25,
         documentName = 'OpenStreetMap POIs',
         userAgent = DEFAULT_USER_AGENT,
+        maxRetries = 3,
+        retryDelayMs = 2000,
         fetchFn = fetch,
     } = options;
 
@@ -70,22 +74,7 @@ export async function genericOpenStreetMapQuery(pointA, pointB, filters, options
     const bbox = buildBoundingBox(pointA, pointB, bufferMeters);
     const query = buildOverpassQuery(bbox, filters, timeoutSeconds);
 
-    const response = await fetchFn(endpoint, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'application/json',
-            'User-Agent': userAgent,
-        },
-        body: `data=${encodeURIComponent(query)}`,
-    });
-
-    if (!response.ok) {
-        const body = await response.text().catch(() => '');
-        throw new Error(`Overpass request failed: ${response.status} ${response.statusText} ${body}`.trim());
-    }
-
-    const payload = await response.json();
+    const payload = await requestOverpass(query, {endpoint, userAgent, maxRetries, retryDelayMs, fetchFn});
     const points = (payload.elements || []).map(normalizeElement).filter(Boolean);
     return {
         points,
@@ -135,6 +124,50 @@ export function findToilets(pointA, pointB, options = {}) {
  */
 export function findStores(pointA, pointB, options = {}) {
     return genericOpenStreetMapQuery(pointA, pointB, POI_FILTERS.stores, {documentName: 'Stores', ...options});
+}
+
+/**
+ * POST an Overpass QL query, retrying on transient rate-limit (429) and gateway-timeout (504) responses.
+ * @param {string} query - Overpass QL query
+ * @param {{endpoint: string, userAgent: string, maxRetries: number, retryDelayMs: number, fetchFn: typeof fetch}} config
+ * @returns {Promise<object>} Parsed Overpass JSON payload
+ */
+async function requestOverpass(query, {endpoint, userAgent, maxRetries, retryDelayMs, fetchFn}) {
+    let lastError;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        const response = await fetchFn(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+                'User-Agent': userAgent,
+            },
+            body: `data=${encodeURIComponent(query)}`,
+        });
+
+        if (response.ok) {
+            return response.json();
+        }
+
+        const body = await response.text().catch(() => '');
+        lastError = new Error(`Overpass request failed: ${response.status} ${response.statusText} ${body}`.trim());
+
+        const isTransient = response.status === 429 || response.status === 504;
+        if (!isTransient || attempt === maxRetries) {
+            throw lastError;
+        }
+
+        await sleep(retryDelayMs * (attempt + 1));
+    }
+    throw lastError;
+}
+
+/**
+ * @param {number} ms
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
