@@ -2,4 +2,5 @@ export * from './src/add-kml-to-gpx.mjs';
 export * from './src/refine-waypoints-for-garmin-connect.mjs';
 export * from './src/anonymize-gpx.mjs';
 export * from './src/trim-gpx.mjs';
+export * from './src/open-street-map.mjs';
 export * from './lib/poi-type.mjs';
